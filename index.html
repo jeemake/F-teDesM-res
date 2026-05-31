@@ -207,6 +207,36 @@
       transform: scale(1.06);
     }
 
+    .final-image {
+      display: flex;
+      justify-content: center;
+      margin-top: clamp(28px, 5vw, 48px);
+    }
+
+    .final-image figure {
+      width: min(100%, 820px);
+      cursor: zoom-in;
+    }
+
+    .final-image img {
+      aspect-ratio: auto;
+      max-height: 82vh;
+      object-fit: contain;
+    }
+
+    .final-image figcaption {
+      padding: 16px 18px 20px;
+      color: var(--rose-dark);
+      font-size: clamp(1.08rem, 2.4vw, 1.4rem);
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .final-image figure:hover img,
+    .final-image figure:focus-within img {
+      transform: scale(1.025);
+    }
+
     .lightbox {
       position: fixed;
       inset: 0;
@@ -404,6 +434,13 @@ Bonne fête maman, toi qui tiens tout, sans jamais laisser tomber un seul de te
           </figure>
         </div>
       </section>
+
+      <section class="final-image" aria-label="Merci Maman">
+        <figure>
+          <img src="Merci.jpg" alt="Merci Maman">
+          <figcaption>Merci Maman</figcaption>
+        </figure>
+      </section>
     </main>
 
     <footer>Avec tout notre amour.</footer>
@@ -415,7 +452,7 @@ Bonne fête maman, toi qui tiens tout, sans jamais laisser tomber un seul de te
   </div>
 
   <script>
-    const gallery = document.querySelector('.gallery');
+    const imageSections = document.querySelector('main');
     const lightbox = document.querySelector('[data-lightbox]');
     const lightboxImage = document.querySelector('[data-lightbox-image]');
     const lightboxClose = document.querySelector('[data-lightbox-close]');
@@ -463,15 +500,15 @@ Bonne fête maman, toi qui tiens tout, sans jamais laisser tomber un seul de te
         heart.style.setProperty('--heart-dx', `${Math.cos(angle) * distance}px`);
         heart.style.setProperty('--heart-dy', `${Math.sin(angle) * distance - 32}px`);
         heart.style.setProperty('--heart-rotate', `${Math.random() * 140 - 70}deg`);
-        heart.style.setProperty('--heart-size', `${14 + Math.random() * 13}px`);
+        heart.style.setProperty('--heart-size', `${28 + Math.random() * 18}px`);
         heart.style.setProperty('--heart-color', heartColors[index % heartColors.length]);
         document.body.appendChild(heart);
         heart.addEventListener('animationend', () => heart.remove(), { once: true });
       }
     }
 
-    gallery.addEventListener('click', (event) => {
-      const image = event.target.closest('.gallery img');
+    imageSections.addEventListener('click', (event) => {
+      const image = event.target.closest('.gallery img, .final-image img');
       if (!image) return;
 
       burstHeartsFrom(image);
