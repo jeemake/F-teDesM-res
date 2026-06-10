@@ -492,6 +492,8 @@ for (let i = 0; i < 9; i++) {
 
 /* ============================== CHARACTERS ============================== */
 const SKIN = 0x9c6644;
+const HAIR = 0x241710;
+function mat(col) { return new THREE.MeshLambertMaterial({ color: col }); }
 function faceBadge(url, r) {
   const g = new THREE.Group();
   const ring = new THREE.Mesh(new THREE.CircleGeometry(r*1.13, 24),
@@ -502,86 +504,113 @@ function faceBadge(url, r) {
   g.add(ring, face);
   return g;
 }
-function limb(rad, len, col) {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad*.8, len, 6),
-    new THREE.MeshLambertMaterial({ color: col }));
+// limb that pivots at its top (shoulder/hip) instead of its middle
+function limbPivot(rad, len, col, x, y, z, tip, tipCol) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad*.78, len, 7), mat(col));
+  m.position.y = -len/2; m.castShadow = true;
+  g.add(m);
+  if (tip) {
+    const t = new THREE.Mesh(new THREE.SphereGeometry(tip, 8, 7), mat(tipCol == null ? col : tipCol));
+    t.position.y = -len; t.castShadow = true;
+    g.add(t);
+  }
+  return g;
+}
+function ball(rad, col, x, y, z, sx, sy, sz) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(rad, 12, 10), mat(col));
+  m.position.set(x, y, z);
+  if (sx) m.scale.set(sx, sy, sz);
   m.castShadow = true;
   return m;
 }
 
 function buildMaman() {
+  const DRESS = 0xe8a13c, ACCENT = 0xc2503c;
   const g = new THREE.Group();
-  const dress = new THREE.Mesh(new THREE.ConeGeometry(.62, 1.35, 12),
-    new THREE.MeshLambertMaterial({ color: 0xe8a13c }));
-  dress.position.y = .85; dress.castShadow = true;
-  const chest = new THREE.Mesh(new THREE.SphereGeometry(.3, 10, 9), dress.material);
-  chest.position.y = 1.5; chest.castShadow = true;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(.4, 14, 12),
-    new THREE.MeshLambertMaterial({ color: SKIN }));
-  head.position.y = 2.12; head.castShadow = true;
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(.43, 12, 10),
-    new THREE.MeshLambertMaterial({ color: 0x241710 }));
-  hair.position.set(0, 2.2, -.09); hair.scale.set(1, .95, .9);
-  const bun = new THREE.Mesh(new THREE.SphereGeometry(.18, 8, 7), hair.material);
-  bun.position.set(0, 2.55, -.28);
-  const band = new THREE.Mesh(new THREE.TorusGeometry(.4, .05, 6, 16),
-    new THREE.MeshLambertMaterial({ color: 0xc2503c }));
-  band.position.y = 2.32; band.rotation.x = Math.PI/2.4;
+  const rig = new THREE.Group(); g.add(rig);
+  // legs with shoes
+  const legL = limbPivot(.085, .5, SKIN, -.17, .55, 0, .11, 0x7a3e2e);
+  const legR = limbPivot(.085, .5, SKIN, .17, .55, 0, .11, 0x7a3e2e);
+  // flowing skirt + fitted top
+  const skirt = new THREE.Mesh(new THREE.ConeGeometry(.62, 1.1, 14), mat(DRESS));
+  skirt.position.y = .95; skirt.castShadow = true;
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(.26, .42, .62, 10), mat(DRESS));
+  torso.position.y = 1.74; torso.castShadow = true;
+  const belt = new THREE.Mesh(new THREE.TorusGeometry(.42, .05, 6, 16), mat(ACCENT));
+  belt.rotation.x = Math.PI/2; belt.position.y = 1.46;
+  const shoulders = ball(.27, DRESS, 0, 2.04, 0, 1.15, .6, .9);
+  const pendant = ball(.06, ACCENT, 0, 1.95, .26);
+  // arms pivoting at the shoulders, with puffed sleeves and hands
+  const armL = limbPivot(.07, .72, SKIN, -.42, 2.0, 0, .09);
+  const armR = limbPivot(.07, .72, SKIN, .42, 2.0, 0, .09);
+  armL.add(ball(.12, DRESS, 0, -.05, 0)); armR.add(ball(.12, DRESS, 0, -.05, 0));
+  armL.rotation.z = .25; armR.rotation.z = -.25;
+  // head, hair with bun + headband, earrings
+  const head = ball(.37, SKIN, 0, 2.42, 0);
+  const hair = ball(.40, HAIR, 0, 2.50, -.08, 1.05, .95, .95);
+  const bun = ball(.17, HAIR, 0, 2.83, -.2);
+  const band = new THREE.Mesh(new THREE.TorusGeometry(.37, .05, 6, 16), mat(ACCENT));
+  band.position.set(0, 2.6, -.02); band.rotation.x = Math.PI/2.5;
+  const earL = ball(.05, 0xd9a04a, -.36, 2.34, .04);
+  const earR = ball(.05, 0xd9a04a, .36, 2.34, .04);
   const face = faceBadge('game/face-maman.jpg', .3);
-  face.position.set(0, 2.12, .43);
-  const armL = limb(.08, .8, 0xe8a13c); armL.position.set(-.55, 1.4, 0);
-  const armR = limb(.08, .8, 0xe8a13c); armR.position.set(.55, 1.4, 0);
-  const legL = limb(.09, .5, SKIN); legL.position.set(-.2, .22, 0);
-  const legR = limb(.09, .5, SKIN); legR.position.set(.2, .22, 0);
-  g.add(dress, chest, head, hair, bun, band, face, armL, armR, legL, legR);
-  g.userData = { armL, armR, legL, legR, body: g };
+  face.position.set(0, 2.42, .41);
+  rig.add(legL, legR, skirt, torso, belt, shoulders, pendant, armL, armR, head, hair, bun, band, earL, earR, face);
+  g.userData = { rig, armL, armR, legL, legR };
   return g;
 }
 
 function buildNeri() {
+  const DRESS = 0xf26d8d, TIE = 0xffd166;
   const g = new THREE.Group();
-  const dress = new THREE.Mesh(new THREE.ConeGeometry(.4, .8, 10),
-    new THREE.MeshLambertMaterial({ color: 0xf26d8d }));
-  dress.position.y = .5; dress.castShadow = true;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(.32, 12, 10),
-    new THREE.MeshLambertMaterial({ color: SKIN }));
-  head.position.y = 1.22; head.castShadow = true;
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(.34, 10, 9),
-    new THREE.MeshLambertMaterial({ color: 0x241710 }));
-  hair.position.set(0, 1.3, -.06); hair.scale.set(1, .9, .9);
-  const p1 = new THREE.Mesh(new THREE.SphereGeometry(.12, 7, 6), hair.material); p1.position.set(-.3, 1.52, -.05);
-  const p2 = p1.clone(); p2.position.x = .3;
-  const face = faceBadge('game/face-neri.jpg', .24);
-  face.position.set(0, 1.22, .35);
-  const armL = limb(.06, .5, 0xf26d8d); armL.position.set(-.36, .85, 0);
-  const armR = limb(.06, .5, 0xf26d8d); armR.position.set(.36, .85, 0);
-  const legL = limb(.07, .3, SKIN); legL.position.set(-.13, .12, 0);
-  const legR = limb(.07, .3, SKIN); legR.position.set(.13, .12, 0);
-  g.add(dress, head, hair, p1, p2, face, armL, armR, legL, legR);
-  g.userData = { armL, armR, legL, legR };
+  const rig = new THREE.Group(); g.add(rig);
+  const legL = limbPivot(.06, .32, SKIN, -.12, .36, 0, .085, 0xffffff);
+  const legR = limbPivot(.06, .32, SKIN, .12, .36, 0, .085, 0xffffff);
+  const dress = new THREE.Mesh(new THREE.ConeGeometry(.4, .78, 12), mat(DRESS));
+  dress.position.y = .7; dress.castShadow = true;
+  const chest = ball(.21, DRESS, 0, 1.1, 0);
+  const armL = limbPivot(.055, .42, SKIN, -.27, 1.16, 0, .07);
+  const armR = limbPivot(.055, .42, SKIN, .27, 1.16, 0, .07);
+  armL.add(ball(.09, DRESS, 0, -.03, 0)); armR.add(ball(.09, DRESS, 0, -.03, 0));
+  armL.rotation.z = .35; armR.rotation.z = -.35;
+  const head = ball(.33, SKIN, 0, 1.52, 0);
+  const hair = ball(.36, HAIR, 0, 1.6, -.06, 1, .92, .92);
+  // pigtails with yellow bobbles
+  const pufL = ball(.13, HAIR, -.32, 1.78, -.03);
+  const pufR = ball(.13, HAIR, .32, 1.78, -.03);
+  const tieL = ball(.055, TIE, -.26, 1.72, -.02);
+  const tieR = ball(.055, TIE, .26, 1.72, -.02);
+  const face = faceBadge('game/face-neri.jpg', .25);
+  face.position.set(0, 1.52, .37);
+  rig.add(legL, legR, dress, chest, armL, armR, head, hair, pufL, pufR, tieL, tieR, face);
+  g.userData = { rig, armL, armR, legL, legR };
   return g;
 }
 
 function buildHira() {
+  const SUIT = 0x3aa0e8;
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.SphereGeometry(.3, 10, 9),
-    new THREE.MeshLambertMaterial({ color: 0x3aa0e8 }));
-  body.scale.set(1, .8, 1.4); body.position.y = .3; body.castShadow = true;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(.3, 12, 10),
-    new THREE.MeshLambertMaterial({ color: SKIN }));
-  head.position.set(0, .55, .42); head.castShadow = true;
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(.31, 10, 9),
-    new THREE.MeshLambertMaterial({ color: 0x241710 }));
-  hair.position.set(0, .66, .36); hair.scale.set(1, .7, .95);
-  const face = faceBadge('game/face-hira.jpg', .22);
-  face.position.set(0, .56, .76);
-  const mat = body.material;
-  const aL = new THREE.Mesh(new THREE.SphereGeometry(.11, 7, 6), mat); aL.position.set(-.26, .12, .42);
-  const aR = aL.clone(); aR.position.x = .26;
-  const lL = new THREE.Mesh(new THREE.SphereGeometry(.12, 7, 6), mat); lL.position.set(-.2, .12, -.32);
-  const lR = lL.clone(); lR.position.x = .2;
-  g.add(body, head, hair, face, aL, aR, lL, lR);
-  g.userData = { armL: aL, armR: aR, legL: lL, legR: lR };
+  const rig = new THREE.Group(); g.add(rig);
+  // round crawling body in his blue onesie
+  const body = ball(.3, SUIT, 0, .36, -.05, 1, .9, 1.45);
+  const nappy = ball(.2, 0xffffff, 0, .34, -.46);
+  // big baby head with a soft cap of hair and a little tuft
+  const head = ball(.35, SKIN, 0, .62, .45);
+  const hair = ball(.36, HAIR, 0, .73, .39, 1, .68, .95);
+  const tuft = ball(.07, HAIR, 0, .99, .35);
+  const face = faceBadge('game/face-hira.jpg', .27);
+  face.position.set(0, .62, .82);
+  // crawling arms in front, folded legs behind
+  const armL = limbPivot(.07, .34, SKIN, -.23, .42, .42, .09);
+  const armR = limbPivot(.07, .34, SKIN, .23, .42, .42, .09);
+  const legL = ball(.13, SUIT, -.2, .17, -.42);
+  const legR = ball(.13, SUIT, .2, .17, -.42);
+  const footL = ball(.09, SKIN, -.24, .14, -.6);
+  const footR = ball(.09, SKIN, .24, .14, -.6);
+  rig.add(body, nappy, head, hair, tuft, face, armL, armR, legL, legR, footL, footR);
+  g.userData = { rig, armL, armR, legL: armL, legR: armR };
   return g;
 }
 
@@ -709,6 +738,7 @@ function updateHud() {
 $('startBtn').addEventListener('click', () => {
   $('intro').style.display = 'none';
   $('hud').style.display = 'block';
+  camYaw = Math.PI;
   audio();
   bgm.play().catch(()=>{});
   state = 'play';
@@ -727,7 +757,7 @@ function sendKiss() {
   if (state !== 'play' || kissCD > 0) return;
   kissCD = 6; kissT = 3;
   sfx.kiss();
-  burst(maman.position.clone().add(new THREE.Vector3(0, 2.2, 0)), 8, TEX_HEART, { up: 2.5, size: .45 });
+  burst(maman.position.clone().add(new THREE.Vector3(0, 2.7, 0)), 8, TEX_HEART, { up: 2.5, size: .45 });
   banner('💋 Bisou envoyé ! Néri accourt vers maman…', 2.2);
 }
 
@@ -917,6 +947,8 @@ function tick() {
       maman.position.y = Math.abs(Math.sin(runT))* (ilen > .05 ? .14 : .04);
     }
     moveLimbs(maman.userData, runT, ilen > .05 ? .9 : .15);
+    const lean = (ilen > .05 && !airborne) ? .14 : 0;
+    maman.userData.rig.rotation.x += (lean - maman.userData.rig.rotation.x) * Math.min(dt*6, 1);
 
     /* ---- kids AI ---- */
     if (state !== 'win') kids.forEach(kid => {
@@ -961,12 +993,15 @@ function tick() {
         while (d2 < -Math.PI) d2 += Math.PI*2;
         kid.g.rotation.y += d2 * Math.min(dt*8, 1);
       }
+      const rig = kid.g.userData.rig;
       if (kid.hi) { // Néri hops
         kp.y = sp > 0 ? Math.abs(Math.sin(kid.bob*1.4))*.16 : 0;
         moveLimbs(kid.g.userData, kid.bob*1.4, sp > 0 ? 1 : .1);
+        rig.rotation.x += ((sp > 0 ? .1 : 0) - rig.rotation.x) * Math.min(dt*6, 1);
       } else { // Hira crawls / wiggles
         kp.y = 0;
-        kid.g.rotation.z = Math.sin(kid.bob)* (sp > 0 ? .12 : .04);
+        rig.rotation.z = Math.sin(kid.bob) * (sp > 0 ? .1 : .03);
+        moveLimbs(kid.g.userData, kid.bob*1.2, sp > 0 ? .55 : .08);
       }
 
       // catch !
@@ -1023,18 +1058,17 @@ function tick() {
     if (dirty) flowerMesh.instanceMatrix.needsUpdate = true;
   }
 
-  /* ---- camera ---- */
-  if (state !== 'intro') {
-    // yaw eases toward behind-maman when she runs
-    let dyaw = momHeading + Math.PI - camYaw;
+  /* ---- camera: fixed angle so up/down/left/right always match the screen ---- */
+  if (state === 'intro') {
+    camYaw += dt*.12;
+  } else {
+    let dyaw = Math.PI - camYaw;
     while (dyaw > Math.PI) dyaw -= Math.PI*2;
     while (dyaw < -Math.PI) dyaw += Math.PI*2;
-    camYaw += dyaw * Math.min(dt*1.6, 1);
-  } else {
-    camYaw += dt*.12;
+    camYaw += dyaw * Math.min(dt*3, 1);
   }
-  const camDist = state === 'intro' ? 16 : 9.5;
-  const camH = state === 'intro' ? 8 : 5.2;
+  const camDist = state === 'intro' ? 16 : 10.5;
+  const camH = state === 'intro' ? 8 : 6.4;
   camTarget.set(
     maman.position.x + Math.sin(camYaw)*camDist,
     maman.position.y + camH,
